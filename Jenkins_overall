@@ -1,0 +1,519 @@
+Jenkins Interview Questions :
+-------------------------------
+/var/lib/jenkins
+
+Manage Jenkins --> Manage Plugins --> available plugins
+
+List of plugins :
+------------------
+
+multi-branch pipeline plugin install 
+email ext plug in
+slave plug in 
+
+Cron Pattern :
+--------------
+* * * * *
+Minutes
+Hour 
+Day of the Month (1 to 31)
+Month (1 to 12)
+Day of the Week (0 to 6)
+
+
+withCredentials([usernamePassword(credentialsId: CredentialsAWS, 
+passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+
+
+Configure Global Security :
+----------------------------
+
+Authentication :
+Process of verifying a users identity
+
+Manage Jenkins --> Configure Global Security 
+
+Security Realm :
+--------------------------
+Jenkins own user database
+Ldap
+Unix user group database
+
+Authorization :
+---------------
+Anyone can do anything (Legacy Mode)
+Logged-in users can do anything 
+Matrix based security
+Project based Matrix Authorization Strategy
+
+Manage Jenkins --> Manage Users --> Create User
+
+pipeline {
+    agent any
+    parameters {
+        string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+        text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
+        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
+        choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
+        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
+    }
+    stages {
+        stage('Example') {
+            steps {
+                echo "Hello ${params.PERSON}"
+
+                echo "Biography: ${params.BIOGRAPHY}"
+
+                echo "Toggle: ${params.TOGGLE}"
+
+                echo "Choice: ${params.CHOICE}"
+
+                echo "Password: ${params.PASSWORD}"
+            }
+        }
+    }
+}
+
+
+
+vars/log.groovy
+def info(message) {
+    echo "INFO: ${message}"
+}
+
+def warning(message) {
+    echo "WARNING: ${message}"
+}
+
+
+Jenkinsfile
+@Library('utils') _
+
+pipeline {
+    agent none
+    stages {
+        stage ('Example') {
+            steps {
+                // log.info 'Starting' 
+                script { 
+                    log.info 'Starting'
+                    log.warning 'Nothing to do!'
+                }
+            }
+        }
+    }
+}
+
+checkoutCode.groovy
+def call(String repoUrl, String branch){
+   def workingDir = "${env.WORKSPACE}"
+   sh "git clone ${repoUrl} ${workingDir}"
+   sh "git checkout ${branch}"
+   return workingDir
+
+}
+
+@Library("shared-lib@master") _
+
+pipeline {
+    agent any
+    stages {
+        stage('Code Checkout') {
+            steps {
+                script {
+                  def workingDir = checkoutCode("https://github.com/tejashreeSalvi/django-todo-cicd.git", 
+												"develop")
+                  echo $workingDir
+                }
+            }
+        }
+    }
+}
+
+
+Adventages of Shared Libraries :
+--------------------------------
+Standarization of pipeline 
+Reduce the duplication of code
+Easy onboarding of new applications, projects
+One place to fix the issues with the shared or common code
+Code Maintainence
+Reduce the risk or errors
+
+vars/helloWorld.groovy
+helloWorld.groovy
+------------------
+
+def call() {
+	sh 'echo hi from DevOps Team'
+}
+
+Manage Jenkins --> Configure System --> Global Pipeline Libraries 
+
+Library Name :  my-shared-library
+
+Default Version : main
+
+
+In Jenkinsfile :
+-----------------
+@Library("my-shared-library") _
+
+pipeline{
+	agent any
+	stages{
+		stage("hello"){
+			steps{
+				helloWorld()
+			}
+		}
+	}
+}
+
+Master Slave Architecture :
+---------------------------
+Goto Jenkins Dashboard --> Manage Jenkins -->  Manage Nodes
+
+New Node --> Name : Node1 --> Select Permanent Agent --> Create
+
+Name : Node1
+Number of Executors : 1
+Remote Root directory : /home/ec2-user/Node1
+ 
+Labels : Nodes
+
+Usage : Use this Node as much as possible
+
+Launch Method : Launch Agents via SSH
+
+Host : <ip-address> 
+Credentials : Click Add Jenkins 
+
+Kind : SSH Username with private key
+
+Usernane : ec2-user
+
+Private Key : Enter Directly : < copy paste the key content of pem file >
+
+Host Key Verification : Manually Trusted key verification strategy
+
+Availability : keep this agent online as much as possible.
+
+Save
+
+
+https://www.youtube.com/watch?v=iqb-UxC1MDo
+https://www.youtube.com/watch?v=mBVISwrRL0o
+
+Active Choice Parameters
+Active Choice Reactive Parameters
+Active Choice Reactive Reference Parameters
+
+
+
+Key strategies:
+====================
+Optimize Pipeline Script:
+
+Reduce complexity: Avoid overly complex Groovy scripts, break down large operations into smaller,
+reusable functions.
+
+Clean workspace: Use the cleanWs step to remove unnecessary files from the workspace between
+ builds.
+ 
+Caching: Employ caching mechanisms to store and reuse frequently accessed dependencies or build 
+artifacts. 
+
+Utilize Parallelism:
+Parallel steps: Identify independent tasks within your pipeline and execute them in parallel 
+using the parallel step to significantly reduce build time. 
+
+Agent allocation: Ensure you have enough agents with appropriate resources allocated to your 
+pipeline to handle parallel execution effectively. 
+
+Efficient Build Steps:
+
+Minimize logging: Avoid excessive logging that can slow down the build process.
+ 
+Optimized tools: Choose efficient build tools and configurations for each step in your pipeline. 
+
+Early exit strategies: Implement mechanisms to stop the build early if potential issues are 
+detected, reducing wasted execution time.
+ 
+Build Management:
+Build retention: Set appropriate build retention policies to automatically delete old builds and 
+prevent disk space issues. 
+Artifact management: Carefully manage which artifacts are stored and for how long to minimize 
+storage overhead. 
+
+Monitoring and Analysis:
+Performance metrics: Regularly monitor key performance metrics like build duration, resource usage,
+ and potential bottlenecks within your pipeline.
+ 
+Logging and tracing: Utilize detailed logs to identify performance issues and pinpoint areas for 
+optimization. 
+
+Jenkins Configuration:
+
+Plugin management: Review and manage installed plugins to avoid unnecessary overhead.
+ 
+Agent configuration: Properly configure your Jenkins agents to match the required resources 
+for your builds. 
+
+
+
+
+
+
+
+
+
+nginx :
+/etc/nginx/nginx.conf
+
+To enable load balancing, you can add following configuration to your server block −
+
+server {
+   listen 80;
+   server_name example.com;
+   root /var/www/example.com;
+   index index.html;
+
+   # Enable load balancing
+   upstream backend {
+      server backend1.example.com;
+      server backend2.example.com;
+   }
+
+   location / {
+      proxy_pass http://backend;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+How would you create a Jenkins pipeline to build, test, and deploy a Java application? 
+
+Describe how you would implement a Jenkins pipeline using a Jenkins file stored in the 
+source code repository ?
+
+How would you set up a Multibranch Pipeline to automatically create jobs for each 
+branch in a Git repository?
+
+How can you configure a Jenkins pipeline to run multiple stages in parallel?
+
+How would you configure a Jenkins job to trigger a build based on changes in a Git repository?
+
+Describe how you would set up a Jenkins job that accepts parameters from the user before 
+running the build
+
+How would you configure Jenkins to send an email notification upon build completion, 
+only if the build fails?
+
+How can you archive and publish build artifacts in Jenkins for later use or download?
+
+How do you securely manage and use credentials (such as API keys or SSH keys) within Jenkins jobs?
+
+How would you pass and use environment variables within a Jenkins pipeline?
+
+Describe how you would configure Jenkins to use multiple build agents for distributed builds
+
+How can you ensure that a particular job runs on a specific Jenkins agent or a group of agents
+
+How would you configure Jenkins to build and deploy Docker images?
+
+A pipeline stage intermittently fails due to network issues. How would you add retry 
+logic to handle such failures?
+
+How would you identify and install necessary plugins for Jenkins to support a specific 
+build tool or technology?
+
+Describe how you would use Shared Libraries to reuse code across multiple Jenkins pipelines.
+
+How can you manage user permissions and secure your Jenkins instance?
+
+What strategy would you use to back up Jenkins configurations and jobs, and how would you 
+restore them?
+
+How would you visualize and monitor the progress of your Jenkins pipelines?
+
+How can you integrate test reports (e.g., JUnit, NUnit) into Jenkins to display test results?
+
+How do you configure Jenkins to automatically discover and run pipelines defined in 
+source control?
+
+What steps would you take to manage long-running jobs that might time out or exceed 
+resource limits?
+
+How would you set up a build promotion strategy in Jenkins to promote builds through 
+different stages (e.g., Dev, QA, Prod)?
+
+Describe how you would set up Jenkins to trigger builds based on GitHub pull requests.
+
+How would you troubleshoot and debug a failing Jenkins pipeline?
+
+How can you use Job DSL to automate the creation and configuration of Jenkins jobs?
+
+How would you configure a matrix build in Jenkins to test an application across multiple 
+environments or configurations?
+
+What measures would you take to secure sensitive information within your Jenkins pipeline scripts?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pipeline{
+	agent any
+
+	tools {
+		maven 'maven3.9.9'
+	}
+	stages{
+		stage('Checkout'){
+			steps {
+				git branch: '', credentialsId: '', url: ''
+			}
+		}
+	}
+}
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'maven3.9.9'  // Refers to the Maven tool name you added
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'development', credentialsId: '8d341570-e046-4d2c-8060-33c3d5d493f7', url: 'https://github.com/gangavaramdevops/maven-web-app-project-kk-funda.git'
+            }    
+        }
+        stage('Build') {
+            steps {
+                sh "mvn clean package"
+            }
+        }
+        stage('amazon-UAT') {
+            steps {
+               build job: 'amazon-QA' //  This is downstream
+            }
+        }
+
+     }
+}
+
+
+pipeline {
+    agent any  // This means the pipeline can run on any available Jenkins agent
+
+    tools {
+        maven 'maven 3.9.9'   // Use Maven 3.9.9 tool configured in Jenkins
+    }
+
+    stages {
+        // Stage 1: Checkout the code from GitHub
+        stage('Checkout') {
+            steps {
+                git branch: 'development', credentialsId: '8d341570-e046-4d2c-8060-33c3d5d493f7', url: 'https://github.com/gangavaramdevops/maven-web-app-project-kk-funda.git'
+            }
+        }
+
+        // Stage 2: Maven Build, Sonar scan, and Nexus deploy (Run in parallel)
+        stage('maven and sonar') {
+            steps {
+                parallel (
+					"Build": {
+                        sh "mvn clean package"  // Run Maven build
+                    },
+                    "Sonar": {
+                        sh "mvn sonar:sonar"  // Run Sonar scan
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+pipeline {
+    agent any  // This means the pipeline can run on any available Jenkins agent
+    tools {
+        maven 'maven 3.9.9'   // Use Maven 3.9.9 tool configured in Jenkins
+    }
+    stages {
+        // Stage 1: Checkout the code from GitHub
+        stage('Checkout') {
+            steps {
+                git branch: 'development', credentialsId: '8d341570-e046-4d2c-8060-33c3d5d493f7', url: 'https://github.com/gangavaramdevops/maven-web-app-project-kk-funda.git'
+            }
+        }
+
+        // Stage 2: Maven Build, Sonar scan, and Nexus deploy (Run in parallel)
+        stage('Maven, Sonar, and Nexus') {
+            steps {
+                parallel (
+                    "Build": {
+                        sh "mvn clean package"  // Run Maven build
+                    },
+                    "Sonar": {
+                        sh "mvn sonar:sonar"  // Run Sonar scan
+                    },
+                    "Nexus": {
+                        sh "mvn deploy"  // Deploy to Nexus repository
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+
+stage(' Trivy Scan '){
+	steps{
+		sh 'trivy --severity HIGH,CRITICAL --no-progress image --format table -o trivy-scanner-report.txt <imagename>'
+	}
+}
+
